@@ -42,7 +42,6 @@ import static android.opengl.GLES20.glUniformMatrix4fv;
 import static android.opengl.GLES20.glUseProgram;
 import static android.opengl.GLES20.glVertexAttribPointer;
 import static android.opengl.GLES20.glViewport;
-import static android.opengl.Matrix.frustumM;
 import static android.opengl.Matrix.multiplyMM;
 import static android.opengl.Matrix.rotateM;
 import static android.opengl.Matrix.setIdentityM;
@@ -50,19 +49,11 @@ import static android.opengl.Matrix.translateM;
 
 
 public class OpenGLRenderer implements Renderer {
-	private static final String TAG = "OpenGLRenderer";
 	private static final int BYTES_PER_FLOAT = 4;
 	private final Context context;
 	private int program;
 	// Uniform names
-	private static final String U_MVPMATRIX 		= "u_MVPMatrix";
-	private static final String U_MVMATRIX 			= "u_MVMatrix";
-	private static final String U_COLOR 			= "u_Color";
-	private static final String U_TEXTURE 			= "u_TextureUnit";
 	// Attributes name
-	private static final String A_POSITION = "a_Position";
-	private static final String A_NORMAL   = "a_Normal";
-	private static final String A_UV       = "a_UV";
 	// Handles para los shaders
 	private int uMVPMatrixLocation;
 	private int uMVMatrixLocation;
@@ -91,15 +82,9 @@ public class OpenGLRenderer implements Renderer {
 	//Texture definition
 	private int	textureHead;
 	private int textureBody;
-	//Perspectives and frustum
-	void frustum(float[] m, int offset, float l, float r, float b, float t, float n, float f)
-	{
-		frustumM(m, offset, l, r, b, t, n, f);
-		// Corrección del bug de Android
-		m[8] /= 2;
-	}
-    void perspective(float[] m, int offset, float fovy, float aspect, float n, float f)
-    {	final float d = f-n;
+
+	//Perspectives
+    void perspective(float[] m, int offset, float fovy, float aspect, float n, float f) {	final float d = f-n;
     	final float angleInRadians = (float) (fovy * Math.PI / 180.0);
     	final float a = (float) (1.0 / Math.tan(angleInRadians / 2.0));
         
@@ -149,12 +134,12 @@ public class OpenGLRenderer implements Renderer {
 		// Check if vertex shader support texture
 		glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, maxVertexTextureImageUnits, 0);
 		if (LoggerConfig.ON) {
-			Log.w(TAG, "Max. Vertex Texture Image Units: "+maxVertexTextureImageUnits[0]);
+			Log.w("OpenGLRenderer", "Max. Vertex Texture Image Units: "+maxVertexTextureImageUnits[0]);
 		}
 		// Check if fragment shader support texture
 		glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, maxTextureImageUnits, 0);
 		if (LoggerConfig.ON) {
-			Log.w(TAG, "Max. Texture Image Units: "+maxTextureImageUnits[0]);
+			Log.w("OpenGLRenderer", "Max. Texture Image Units: "+maxTextureImageUnits[0]);
 		}
 
 		//--------------------------------------
@@ -190,17 +175,17 @@ public class OpenGLRenderer implements Renderer {
 		glUseProgram(program);
 		
 		// Capture uniforms
-		uMVPMatrixLocation = glGetUniformLocation(program, U_MVPMATRIX);
-		uMVMatrixLocation = glGetUniformLocation(program, U_MVMATRIX);
-		uColorLocation = glGetUniformLocation(program, U_COLOR);
-		uTextureUnitLocation = glGetUniformLocation(program, U_TEXTURE);
+		uMVPMatrixLocation = glGetUniformLocation(program, "u_MVPMatrix");
+		uMVMatrixLocation = glGetUniformLocation(program, "u_MVMatrix");
+		uColorLocation = glGetUniformLocation(program, "u_Color");
+		uTextureUnitLocation = glGetUniformLocation(program, "u_TextureUnit");
 		
 		// Capture attributes
-		aPositionLocation = glGetAttribLocation(program, A_POSITION);
+		aPositionLocation = glGetAttribLocation(program, "a_Position");
 		glEnableVertexAttribArray(aPositionLocation);
-		aNormalLocation = glGetAttribLocation(program, A_NORMAL);
+		aNormalLocation = glGetAttribLocation(program, "a_Normal");
 		glEnableVertexAttribArray(aNormalLocation);
-		aUVLocation = glGetAttribLocation(program, A_UV);
+		aUVLocation = glGetAttribLocation(program, "a_UV");
 		glEnableVertexAttribArray(aUVLocation);	
 	}
 	//------------------------------------------
@@ -229,30 +214,13 @@ public class OpenGLRenderer implements Renderer {
 		glEnable(GL_CULL_FACE);
 		glLineWidth(2.0f);
 
-		//MODEL MATRIX CADA OBJETO TIENE QUE TENER EL SUYO
-		setIdentityM(modelMatrix, 0);
-		// alejamos 5 de profundidad
-		translateM(modelMatrix, 0, 0f, 0.0f, -5.0f);
-		rotateM(modelMatrix, 0, rY, 0f, 1f, 0f);
-		rotateM(modelMatrix, 0, rX, 1f, 0f, 0f);
-
-		//^ las matrices se premultiplican para que funcionen.
-		multiplyMM(MVP, 0, projectionMatrix, 0, modelMatrix, 0);
-		// Envía la matriz de proyección multiplicada por modelMatrix al shader
-		glUniformMatrix4fv(uMVPMatrixLocation, 1, false, MVP, 0);
-		// Envía la matriz modelMatrix al shader
-		glUniformMatrix4fv(uMVMatrixLocation, 1, false, modelMatrix, 0);	
-		// Update color
-		glUniform4f(uColorLocation, 1.0f, 1.0f, 1.0f, 1.0f);
-
-
-			
 		// TEXTURE ACTIVATION
 		glActiveTexture(GL_TEXTURE0);
 		//Head print
-		textureAssociation(textureHead, obj3DShead);
+		textureAssociation(textureHead, obj3DShead, modelMatrix, rXHead, rYHead);
 		//Body print
-		textureAssociation(textureBody,obj3DSbody );
+		textureAssociation(textureBody,obj3DSbody, modelMatrixBody, rXBody, rYBody);
+
 		updateRotation();
 	}
 	//------------------------------------------
@@ -272,38 +240,80 @@ public class OpenGLRenderer implements Renderer {
 		}
 	}
 	//------------------------------------------
-	public void textureAssociation(int textureObject, Resource3DSReader obj){
+	public void textureAssociation(int textureObject, Resource3DSReader obj, float[] model, float rX, float rY){
+		//MODEL MATRIX CADA OBJETO TIENE QUE TENER EL SUYO
+		setIdentityM(model, 0);
+		// alejamos 5 de profundidad
+		translateM(model, 0, 0f, 0.0f, -5.0f);
+		rotateM(model, 0, rY, 0f, 1f, 0f);
+		rotateM(model, 0, rX, 1f, 0f, 0f);
+
+		//^ las matrices se premultiplican para que funcionen.
+		multiplyMM(MVP, 0, projectionMatrix, 0, model, 0);
+		// Envía la matriz de proyección multiplicada por modelMatrix al shader
+		glUniformMatrix4fv(uMVPMatrixLocation, 1, false, MVP, 0);
+		// Envía la matriz modelMatrix al shader
+		glUniformMatrix4fv(uMVMatrixLocation, 1, false, model, 0);
+		// Update color
+		glUniform4f(uColorLocation, 1.0f, 1.0f, 1.0f, 1.0f);
+
 		glBindTexture(GL_TEXTURE_2D, textureObject);
 		glUniform1f(uTextureUnitLocation, 0);
 		drawObject(obj);
 	}
+
+
+
+
+
 	//   			HANDLERS
 	//------------------------------------------
 	//------------------------------------------
 	private float rotationSpeed = 0.1f; // Puedes ajustar esta velocidad según sea necesario
-	private float destRX = 0f;
-	private float destRY = 0f;
-	private float rX = 0f;
-	private float rY = 0f;
+	private float destRXHead = 0f;
+	private float destRYHead = 0f;
+	private float destRXBody = 0f;
+	private float destRYBody = 0f;
+	private float rXHead = 0f;
+	private float rYHead = 0f;
+
+	private float rXBody = 0f;
+	private float rYBody = 0f;
+
 	public void handleTouchPress(float normalizedX, float normalizedY) {
 		// Calcular la rotación necesaria para mover gradualmente el cuerpo hacia el punto de clic
-		destRX = -normalizedY * 180f;
-		destRY = normalizedX * 180f;
+		destRXBody = -normalizedY * 180f;
+		destRYBody = normalizedX * 180f;
+
+		destRXHead = -normalizedY * 180f;
+		destRYHead = normalizedX * 180f;
 	}
 
 	public void handleTouchDrag(float normalizedX, float normalizedY) {
 		// Calcular la rotación necesaria para mover gradualmente el cuerpo hacia el punto de clic
-		destRX = -normalizedY * 180f;
-		destRY = normalizedX * 180f;
+		destRXBody = -normalizedY * 180f;
+		destRYBody = normalizedX * 180f;
+
+		destRXHead = -normalizedY * 180f;
+		destRYHead = normalizedX * 180f;
 	}
 
 	public void updateRotation() {
 		// Calcular la rotación incremental para cada fotograma
-		float diffX = destRX - rX;
-		float diffY = destRY - rY;
+		float diffXBody = destRXBody - rXBody;
+		float diffYBody = destRYBody - rYBody;
+
+		float diffXHead = destRXHead - rXHead;
+		float diffYHead = destRYHead - rYHead;
+
+
 
 		// Aplicar rotación incremental
-		rX += diffX * rotationSpeed;
-		rY += diffY * rotationSpeed;
+		rXBody += diffXBody * rotationSpeed;
+		rYBody += diffYBody * rotationSpeed;
+
+		rXHead += diffXHead * (rotationSpeed + 0.1);
+		rYHead += diffYHead * (rotationSpeed + 0.5);
+
 	}
 }
