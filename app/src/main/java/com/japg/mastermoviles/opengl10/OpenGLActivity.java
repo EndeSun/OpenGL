@@ -25,33 +25,32 @@ public class OpenGLActivity extends AppCompatActivity {
         final ActivityManager activityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
         final ConfigurationInfo configurationInfo = activityManager.getDeviceConfigurationInfo();
         // Version check
-        final boolean supportsEs2 =
-                configurationInfo.reqGlEsVersion >= 0x20000
+        final boolean supportsEs2 = configurationInfo.reqGlEsVersion >= 0x20000
                         || Build.FINGERPRINT.startsWith("generic")
                         || Build.FINGERPRINT.startsWith("unknown")
                         || Build.MODEL.contains("google_sdk")
                         || Build.MODEL.contains("Emulator")
                         || Build.MODEL.contains("Android SDK built for x86");
+
         if (supportsEs2) {
-            // Request an OpenGL ES 2.0 compatible context.
+            // Request OpenGL 2.0 compatible context.
             glSurfaceView.setEGLContextClientVersion(2);
-            // Para que funcione en el emulador
+            // Emulator configuration
             glSurfaceView.setEGLConfigChooser(8, 8, 8, 8, 16, 0);
-            // -----------------------
             // Asigna nuestro renderer.
+            // -----------------------
             glSurfaceView.setRenderer(openGLRenderer);
+            // -----------------------
             rendererSet = true;
-            Toast.makeText(this, "OpenGL ES 2.0 soportado", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "OpenGL ES 2.0 supported", Toast.LENGTH_LONG).show();
         } else {
-            Toast.makeText(this, "Este dispositivo no soporta OpenGL ES 2.0", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "OpenGL ES 2.0 not supported", Toast.LENGTH_LONG).show();
             return;
         }
 
         glSurfaceView.setOnTouchListener((v, event) -> {
             if (event != null) {
-                // Convert touch coordinates into normalized device
-                // coordinates, keeping in mind that Android's Y
-                // coordinates are inverted.
+                // Android's Y coordinates are inverted --> normalization
                 final float normalizedX = (event.getX() / (float) v.getWidth()) * 2 - 1;
                 final float normalizedY = -((event.getY() / (float) v.getHeight()) * 2 - 1);
                 if (event.getAction() == MotionEvent.ACTION_DOWN) {

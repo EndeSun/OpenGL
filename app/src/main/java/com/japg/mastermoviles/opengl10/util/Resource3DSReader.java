@@ -140,7 +140,7 @@ public class Resource3DSReader {
 		int 	l_chunk_length;
 		int 	l_byte;
 		int		i;
-		String name;
+		StringBuilder name;
 		int		totalPol;
 		
 		numMeshes=-1;
@@ -155,25 +155,23 @@ public class Resource3DSReader {
 				// Lee la cabecera, id y longitud								
 				l_chunk_id = readUnsignedShort(inputStream);
 				l_chunk_length = readUnsignedInt(inputStream);
-				//if (LoggerConfig.ON) {
-					//Log.w(TAG, "[A] Leyendo 3DS id: " + l_chunk_id);
-					//Log.w(TAG, "[A] Leyendo 3DS length: " + l_chunk_length);
-				//}		
 				switch (l_chunk_id)
 			    {
-			    	case CHUNK_MAIN: 
-			    		break;
-			        
-			    	case CHUNK_OBJMESH:
-			        	break;
-			         
-			        case CHUNK_OBJBLOCK: 
-			        	
-			        	name="";
+			    	case CHUNK_MAIN:
+
+					case CHUNK_TRIMESH:
+
+					case CHUNK_OBJMESH:
+						break;
+
+					case CHUNK_OBJBLOCK:
+			        	name = new StringBuilder();
 			        	i=0;
 			            do {
 			            	l_byte = inputStream.read();
-			            	if (l_byte>0) name=name+(char)l_byte;
+			            	if (l_byte>0) {
+								name.append((char) l_byte);
+							}
 			            	i++;
 			            } while(l_byte != 0 && i<20);
 			            numMeshes++;
@@ -181,39 +179,24 @@ public class Resource3DSReader {
 			        		Log.w(TAG, "[A] CHUNK_OBJBLOCK [" + numMeshes + "]: " + name);
 						}
 			            break;
-			        
-			        case CHUNK_TRIMESH:
-			        	break;  
-			        	
-			        case CHUNK_VERTLIST: 
+
+					case CHUNK_VERTLIST:
 			        	numVer[numMeshes] = readUnsignedShort(inputStream);
-			        	//if (LoggerConfig.ON) {
-							//Log.w(TAG, "[A] Número de Vértices: " + numVer[numMeshes]);
-						//}
 			            inputStream.skip(numVer[numMeshes]*3*BYTES_PER_FLOAT);
 			            break;
 			            
 			        case CHUNK_FACELIST:
 			        	numPol[numMeshes] = readUnsignedShort(inputStream);
-			        	//if (LoggerConfig.ON) {
-							//Log.w(TAG, "[A] Número de Polígonos: " + numPol[numMeshes]);
-						//}
 			            inputStream.skip(numPol[numMeshes]*4*BYTES_PER_SHORT);
 			            totalPol+=numPol[numMeshes];
 			            break;
 			            
 			        case CHUNK_MAPLIST:
 			        	numUv[numMeshes] = readUnsignedShort(inputStream);
-			        	//if (LoggerConfig.ON) {
-							//Log.w(TAG, "[A] Número de Uv: " + numUv[numMeshes]);
-						//}
 			            inputStream.skip(numUv[numMeshes]*2*BYTES_PER_FLOAT);
 			            break;
 			            
 			        default:
-			            //if (LoggerConfig.ON) {
-							//Log.w(TAG, "[A] 3DS saltando: " + (l_chunk_length-6) + " bytes, quedan: "+inputStream.available());
-						//}
 			            inputStream.skip(l_chunk_length-6);
 			        	break;
 			    }	
@@ -329,20 +312,16 @@ public class Resource3DSReader {
 				// Lee la cabecera, id y longitud								
 				l_chunk_id = readUnsignedShort(inputStream);
 				l_chunk_length = readUnsignedInt(inputStream);
-				
-				//if (LoggerConfig.ON) {
-					//Log.w(TAG, "Leyendo 3DS id: " + l_chunk_id);
-					//Log.w(TAG, "Leyendo 3DS length: " + l_chunk_length);
-				//}
 				switch (l_chunk_id)
 			    {
-			    	case CHUNK_MAIN: 
-			    		break;
-			        
-			    	case CHUNK_OBJMESH:
-			        	break;
-			         
-			        case CHUNK_OBJBLOCK: 
+			    	case CHUNK_MAIN:
+
+					case CHUNK_TRIMESH:
+
+					case CHUNK_OBJMESH:
+						break;
+
+					case CHUNK_OBJBLOCK:
 			        	
 			        	if (numMeshes>-1) expandVertices(numMeshes);
 			        	name="";
@@ -357,16 +336,9 @@ public class Resource3DSReader {
 						//}
 			            numMeshes++;
 			            break;
-			        
-			        case CHUNK_TRIMESH:
-			        	break;  
-			        	
-			        case CHUNK_VERTLIST: 
+
+					case CHUNK_VERTLIST:
 			        	numVer[numMeshes] = readUnsignedShort(inputStream);
-				        	
-			            //if (LoggerConfig.ON) {
-							//Log.w(TAG, "[R] Número de Vértices: " + numVer[numMeshes]);
-						//}
 			            for (i=0; i<numVer[numMeshes]; i++)
 			            {
 			            	vertexBuffer[i*3]   = readFloat(inputStream);
@@ -377,11 +349,6 @@ public class Resource3DSReader {
 			            
 			        case CHUNK_FACELIST:
 			        	numPol[numMeshes] = readUnsignedShort(inputStream);
-			        			        	        	
-			        	//if (LoggerConfig.ON) {
-							//Log.w(TAG, "[R] Número de Polígonos: " + numPol[numMeshes]);
-						//}
-			        			        		            
 			        	for (i=0; i<numPol[numMeshes]; i++)
 			            {
 			        		polBuffer[i*3]   = readUnsignedShort(inputStream);
@@ -389,11 +356,6 @@ public class Resource3DSReader {
 			        		polBuffer[i*3+2] = readUnsignedShort(inputStream);
 			        		l_byte = readUnsignedShort(inputStream);
 			            }
-			        	//int bytes_left = l_chunk_length - numPol[numMeshes] * 4 * BYTES_PER_SHORT - 2;  
-			        	//if (LoggerConfig.ON) {
-			        		//Log.w(TAG, "[R] Facelist, quedan: " + bytes_left + " bytes");
-			        	//}
-			        
 			            break;
 			            
 			        case CHUNK_MAPLIST:
@@ -419,9 +381,6 @@ public class Resource3DSReader {
 			    		}
 			        	break;
 			        default:
-			           	//if (LoggerConfig.ON) {
-							//Log.w(TAG, "[R] 3DS saltando: " + (l_chunk_length-6) + " bytes");
-						//}
 			        	inputStream.skip(l_chunk_length-6);
 			        	break;
 			    }
@@ -449,30 +408,3 @@ public class Resource3DSReader {
 		return numMeshes;
 	}
 }
-
-/* Leer grupos de smooth
-for(i = 0; i < trimesh->num_face; i++) {
-int j = i * 3,k;
-int v0 = face[j + 0];
-int v1 = face[j + 1];
-int v2 = face[j + 2];
-for(k = 1; k <= vertex_face[v0][0]; k++) {
-	int l = vertex_face[v0][k];
-	if(i == l || (smoothgroup && smoothgroup[i] & smoothgroup[l]))
-		vector_add(&normal_vertex[j + 0],&normal_face[l],
-			&normal_vertex[j + 0]);
-}
-for(k = 1; k <= vertex_face[v1][0]; k++) {
-	int l = vertex_face[v1][k];
-	if(i == l || (smoothgroup && smoothgroup[i] & smoothgroup[l]))
-		vector_add(&normal_vertex[j + 1],&normal_face[l],
-			&normal_vertex[j + 1]);
-}
-for(k = 1; k <= vertex_face[v2][0]; k++) {
-	int l = vertex_face[v2][k];
-	if(i == l || (smoothgroup && smoothgroup[i] & smoothgroup[l]))
-		vector_add(&normal_vertex[j + 2],&normal_face[l],
-			&normal_vertex[j + 2]);
-}
-}
-*/
