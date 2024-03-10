@@ -3,6 +3,7 @@ package com.japg.mastermoviles.opengl10;
 import android.content.Context;
 import android.opengl.GLSurfaceView.Renderer;
 import android.util.Log;
+import android.view.ScaleGestureDetector;
 
 import com.japg.mastermoviles.opengl10.util.LoggerConfig;
 import com.japg.mastermoviles.opengl10.util.Resource3DSReader;
@@ -84,7 +85,8 @@ public class OpenGLRenderer implements Renderer {
 	private int textureBody;
 
 	//Perspectives
-    void perspective(float[] m, int offset, float fovy, float aspect, float n, float f) {	final float d = f-n;
+    void perspective(float[] m, int offset, float fovy, float aspect, float n, float f) {
+		final float d = f-n;
     	final float angleInRadians = (float) (fovy * Math.PI / 180.0);
     	final float a = (float) (1.0 / Math.tan(angleInRadians / 2.0));
         
@@ -217,9 +219,9 @@ public class OpenGLRenderer implements Renderer {
 		// TEXTURE ACTIVATION
 		glActiveTexture(GL_TEXTURE0);
 		//Head print
-		textureAssociation(textureHead, obj3DShead, modelMatrix, rXHead, rYHead);
+		textureAssociation(textureHead, obj3DShead, modelMatrix, rXHead, rYHead, rZHead);
 		//Body print
-		textureAssociation(textureBody,obj3DSbody, modelMatrixBody, rXBody, rYBody);
+		textureAssociation(textureBody,obj3DSbody, modelMatrixBody, rXBody, rYBody, rZBody);
 
 		updateRotation();
 	}
@@ -240,11 +242,11 @@ public class OpenGLRenderer implements Renderer {
 		}
 	}
 	//------------------------------------------
-	public void textureAssociation(int textureObject, Resource3DSReader obj, float[] model, float rX, float rY){
+	public void textureAssociation(int textureObject, Resource3DSReader obj, float[] model, float rX, float rY, float rZ){
 		//MODEL MATRIX CADA OBJETO TIENE QUE TENER EL SUYO
 		setIdentityM(model, 0);
 		// alejamos 5 de profundidad
-		translateM(model, 0, 0f, 0.0f, -5.0f);
+		translateM(model, 0, 0f, 0.0f, rZ);
 		rotateM(model, 0, rY, 0f, 1f, 0f);
 		rotateM(model, 0, rX, 1f, 0f, 0f);
 
@@ -279,14 +281,19 @@ public class OpenGLRenderer implements Renderer {
 
 	private float rXBody = 0f;
 	private float rYBody = 0f;
+	private float rZBody = -5f;
+	private float rZHead = -5f;
 
 	public void handleTouchPress(float normalizedX, float normalizedY) {
 		// Calcular la rotación necesaria para mover gradualmente el cuerpo hacia el punto de clic
-		destRXBody = -normalizedY * 180f;
-		destRYBody = normalizedX * 180f;
+		destRXBody = -normalizedY * 20f;
+		destRYBody = normalizedX * 20f;
 
-		destRXHead = -normalizedY * 180f;
-		destRYHead = normalizedX * 180f;
+		destRXHead = -normalizedY * 1f;
+		destRYHead = normalizedX * 1f;
+
+		//rZBody -= 1;
+		//rZHead -= 1;
 	}
 
 	public void handleTouchDrag(float normalizedX, float normalizedY) {
@@ -298,6 +305,18 @@ public class OpenGLRenderer implements Renderer {
 		destRYHead = normalizedX * 180f;
 	}
 
+	public void handleZoomIn(float normalizedZ) {
+		rZHead += normalizedZ;
+		rZBody += normalizedZ;
+	}
+
+	public void handleZoomOut(float normalizedZ){
+		rZHead -= normalizedZ;
+		rZBody -= normalizedZ;
+	}
+
+	private ScaleGestureDetector detector;
+
 	public void updateRotation() {
 		// Calcular la rotación incremental para cada fotograma
 		float diffXBody = destRXBody - rXBody;
@@ -306,14 +325,11 @@ public class OpenGLRenderer implements Renderer {
 		float diffXHead = destRXHead - rXHead;
 		float diffYHead = destRYHead - rYHead;
 
-
-
 		// Aplicar rotación incremental
 		rXBody += diffXBody * rotationSpeed;
 		rYBody += diffYBody * rotationSpeed;
 
 		rXHead += diffXHead * (rotationSpeed + 0.1);
-		rYHead += diffYHead * (rotationSpeed + 0.5);
-
+		rYHead += 1;
 	}
 }
