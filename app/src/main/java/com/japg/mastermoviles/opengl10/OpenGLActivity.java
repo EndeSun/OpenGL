@@ -14,6 +14,7 @@ import androidx.appcompat.app.AppCompatActivity;
 public class OpenGLActivity extends AppCompatActivity {
     private GLSurfaceView glSurfaceView;
     private boolean rendererSet = false;
+    private float oldDistance = 0f;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,8 +56,22 @@ public class OpenGLActivity extends AppCompatActivity {
                 final float normalizedY = -((event.getY() / (float) v.getHeight()) * 2 - 1);
                 if (event.getAction() == MotionEvent.ACTION_DOWN) {
                     glSurfaceView.queueEvent(() -> openGLRenderer.handleTouchPress(normalizedX, normalizedY));
+                    oldDistance = calculateDistance(event);
+
                 } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
                     glSurfaceView.queueEvent(() -> openGLRenderer.handleTouchDrag(normalizedX, normalizedY));
+                    if (event.getPointerCount() == 2) {
+                        float newDistance = calculateDistance(event);
+                        float scaleFactor = (newDistance - oldDistance) * 0.01f; // Ajusta este valor según sea necesario
+                        oldDistance = newDistance;
+                        glSurfaceView.queueEvent(() -> {
+                            if (scaleFactor > 0) {
+                                openGLRenderer.handleZoomIn(scaleFactor);
+                            } else {
+                                openGLRenderer.handleZoomOut(-scaleFactor);
+                            }
+                        });
+                    }
                 }
                 return true;
             } else {
@@ -66,12 +81,10 @@ public class OpenGLActivity extends AppCompatActivity {
         setContentView(glSurfaceView);
     }
 
-    private float calculatePinchDistance(MotionEvent event) {
-        float x1 = event.getX(0);
-        float y1 = event.getY(0);
-        float x2 = event.getX(1);
-        float y2 = event.getY(1);
-        return (float) Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+    private float calculateDistance(MotionEvent event) {
+        float dx = event.getX(0);
+        float dy = event.getY(0);
+        return (float) Math.sqrt(dx * dx + dy * dy);
     }
 
 

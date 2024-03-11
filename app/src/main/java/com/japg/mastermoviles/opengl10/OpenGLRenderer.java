@@ -53,9 +53,7 @@ public class OpenGLRenderer implements Renderer {
 	private static final int BYTES_PER_FLOAT = 4;
 	private final Context context;
 	private int program;
-	// Uniform names
-	// Attributes name
-	// Handles para los shaders
+
 	private int uMVPMatrixLocation;
 	private int uMVMatrixLocation;
 	private int uColorLocation;
