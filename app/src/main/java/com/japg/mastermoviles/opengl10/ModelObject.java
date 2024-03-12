@@ -23,8 +23,6 @@ import static android.opengl.Matrix.setIdentityM;
 import static android.opengl.Matrix.translateM;
 
 import android.content.Context;
-import android.util.Log;
-
 import com.japg.mastermoviles.opengl10.util.LoggerConfig;
 import com.japg.mastermoviles.opengl10.util.Resource3DSReader;
 import com.japg.mastermoviles.opengl10.util.ShaderHelper;
@@ -34,7 +32,8 @@ import com.japg.mastermoviles.opengl10.util.TextureHelper;
 import java.nio.Buffer;
 
 public class ModelObject {
-    private Context context;
+
+    private final Context context;
     private int uMVPMatrixLocation;
     private int uMVMatrixLocation;
     private int uColorLocation;
@@ -42,7 +41,6 @@ public class ModelObject {
     private int aPositionLocation;
     private int aNormalLocation;
     private int aUVLocation;
-    private int program;
 
     private final float[] MVP = new float[16];
     private static final int BYTES_PER_FLOAT = 4;
@@ -51,9 +49,9 @@ public class ModelObject {
     private static final int UV_COMPONENT_COUNT = 2;
     private static final int STRIDE = (POSITION_COMPONENT_COUNT + NORMAL_COMPONENT_COUNT + UV_COMPONENT_COUNT) * BYTES_PER_FLOAT; // (8 * 4) => 32
 
-    private Resource3DSReader object;
+    private final Resource3DSReader object;
     private int texture;
-    private int textureResource;
+    private final int textureResource;
 
     private float rX;
     private float rY;
@@ -76,43 +74,18 @@ public class ModelObject {
         this.rY = rYinit;
         this.rZ = rZinit;
     }
-
-    public void setdst(float dstrX, float dstrY){
-        this.dstrX = dstrX;
-        this.dstrY = dstrY;
-    }
-
-    public void updatePosition(float speed){
-        float diffX = this.dstrX - this.rX;
-        float diffY = this.dstrY - this.rY;
-
-        this.rX += diffX * speed;
-        this.rY += diffY * speed;
-    }
-
-    public void zoom(float rZ){
-        this.rZ += rZ;
-    }
-
+    //------------------------------------------
     public void loadTexture(){
         String vertexShaderSource;
         String fragmentShaderSource;
 
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-
         int[]	maxVertexTextureImageUnits = new int[1];
         int[]	maxTextureImageUnits       = new int[1];
-
         // Check if vertex shader support texture
         glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, maxVertexTextureImageUnits, 0);
-        if (LoggerConfig.ON) {
-            Log.w("OpenGLRenderer", "Max. Vertex Texture Image Units: "+maxVertexTextureImageUnits[0]);
-        }
         // Check if fragment shader support texture
         glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, maxTextureImageUnits, 0);
-        if (LoggerConfig.ON) {
-            Log.w("OpenGLRenderer", "Max. Texture Image Units: "+maxTextureImageUnits[0]);
-        }
         // Read the shaders for vertex shader
         if (maxVertexTextureImageUnits[0]>0) {
             // texture support
@@ -123,13 +96,12 @@ public class ModelObject {
             vertexShaderSource = TextResourceReader.readTextFileFromResource(context, R.raw.specular_vertex_shader2);
             fragmentShaderSource = TextResourceReader.readTextFileFromResource(context, R.raw.specular_fragment_shader2);
         }
-
         // Compile shaders
         int vertexShader = ShaderHelper.compileVertexShader(vertexShaderSource);
         int fragmentShader = ShaderHelper.compileFragmentShader(fragmentShaderSource);
 
         // Link OpenGL program
-        program = ShaderHelper.linkProgram(vertexShader, fragmentShader);
+        int program = ShaderHelper.linkProgram(vertexShader, fragmentShader);
 
         // validate openGL program
         if (LoggerConfig.ON) { ShaderHelper.validateProgram(program); }
@@ -153,7 +125,7 @@ public class ModelObject {
 
         this.texture = TextureHelper.loadTexture(context, this.textureResource);
     }
-    
+    //------------------------------------------
     public void drawObject(float[] projectionMatrix) {
         setIdentityM(modelMatrix, 0);
         translateM(modelMatrix, 0, 0f, 0.0f, rZ);
@@ -184,5 +156,27 @@ public class ModelObject {
             glVertexAttribPointer(aUVLocation, NORMAL_COMPONENT_COUNT, GL_FLOAT, false, STRIDE, object.dataBuffer[i]);
             glDrawArrays(GL_TRIANGLES, 0, this.object.numVertices[i]);
         }
+    }
+    //------------------------------------------
+    //------------------------------------------
+
+
+
+
+    public void setdst(float dstrX, float dstrY){
+        this.dstrX = dstrX;
+        this.dstrY = dstrY;
+    }
+
+    public void updatePosition(float speed){
+        float diffX = this.dstrX - this.rX;
+        float diffY = this.dstrY - this.rY;
+
+        this.rX += diffX * speed;
+        this.rY += diffY * speed;
+    }
+
+    public void zoom(float rZ){
+        this.rZ += rZ;
     }
 }

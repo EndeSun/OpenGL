@@ -15,13 +15,11 @@ import static android.opengl.GLES20.glLineWidth;
 import static android.opengl.GLES20.glViewport;
 
 public class OpenGLRenderer implements Renderer {
-	private final Context context;
 	private final float[] projectionMatrix = new float[16];
 	private final ModelObject headModel;
 	private final ModelObject bodyModel;
 	//------------------------------------------
 	public OpenGLRenderer(Context context) {
-		this.context = context;
 		headModel = new ModelObject(context, R.raw.cabeza_mario_6, R.drawable.cara_2, 0, 0, -5);
 		bodyModel = new ModelObject(context, R.raw.cuerpo_mario_6, R.drawable.cuerpo_2, 0, 0, -5);
 	}
@@ -41,6 +39,7 @@ public class OpenGLRenderer implements Renderer {
 		glLineWidth(2.0f);
 		// TEXTURE ACTIVATION
 		glActiveTexture(GL_TEXTURE0);
+
 		headModel.drawObject(projectionMatrix);
 		bodyModel.drawObject(projectionMatrix);
 		updateRotation();
@@ -56,7 +55,7 @@ public class OpenGLRenderer implements Renderer {
 	//-------------------HANDLERS-----------------------
 	public void handleTouchPress(float normalizedX, float normalizedY) {
 		headModel.setdst(-normalizedY * 20f, normalizedX * 20f);
-		//bodyModel.setdst(-normalizedX, normalizedY);
+		//bodyModel.setdst(-normalizedY, normalizedX);
 	}
 
 	public void handleTouchDrag(float normalizedX, float normalizedY) {

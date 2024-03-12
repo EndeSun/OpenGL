@@ -6,6 +6,7 @@ import android.content.pm.ConfigurationInfo;
 import android.opengl.GLSurfaceView;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -14,16 +15,19 @@ import androidx.appcompat.app.AppCompatActivity;
 public class OpenGLActivity extends AppCompatActivity {
     private GLSurfaceView glSurfaceView;
     private boolean rendererSet = false;
-    private float oldDistance = 0f;
+    private float dstX = 1f;
+    private float dstY = 1f;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         // View
         glSurfaceView = new GLSurfaceView(this);
         // OpenGLRenderer
         final OpenGLRenderer openGLRenderer = new OpenGLRenderer(this);
         final ActivityManager activityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+
         final ConfigurationInfo configurationInfo = activityManager.getDeviceConfigurationInfo();
         // Version check
         final boolean supportsEs2 = configurationInfo.reqGlEsVersion >= 0x20000
@@ -57,22 +61,31 @@ public class OpenGLActivity extends AppCompatActivity {
 
                 if (event.getAction() == MotionEvent.ACTION_DOWN) {
                     glSurfaceView.queueEvent(() -> openGLRenderer.handleTouchPress(normalizedX, normalizedY));
-                    oldDistance = calculateDistance(event);
+                    //old distances
+                    dstX = normalizedX;
+                    dstY = normalizedY;
 
                 } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
                     glSurfaceView.queueEvent(() -> openGLRenderer.handleTouchDrag(normalizedX, normalizedY));
-
+                    //Flinch event detected
                     if (event.getPointerCount() == 2) {
-                        float newDistance = calculateDistance(event);
-                        float scaleFactor = (newDistance - oldDistance) * 0.01f; // Ajusta este valor según sea necesario
-                        oldDistance = newDistance;
-                        glSurfaceView.queueEvent(() -> {
-                            if (scaleFactor > 0) {
-                                openGLRenderer.handleZoomIn(scaleFactor);
-                            } else {
-                                openGLRenderer.handleZoomOut(-scaleFactor);
-                            }
-                        });
+                        float secondFingerX = (event.getX(1) / (float) v.getWidth()) * 2 - 1;
+                        float secondFingerY = -((event.getY(1) / (float) v.getHeight()) * 2 - 1);
+                        float distanceNew = calculateDistance(normalizedX, normalizedY, secondFingerX, secondFingerY);
+                        float distanceOld = calculateDistance(dstX, dstY, secondFingerX, secondFingerY);
+                        // Check for zoom out (absolute value of old distance is less than new distance)
+                        if (Math.abs(distanceOld) < Math.abs(distanceNew)) {
+                            float zoomFactor = (distanceNew - distanceOld) * 10; // Adjust sensitivity as needed
+                            glSurfaceView.queueEvent(() -> openGLRenderer.handleZoomOut(zoomFactor));
+                        }
+
+                        if (Math.abs(distanceOld) > Math.abs(distanceNew)) {
+                            float zoomFactor = (distanceOld - distanceNew) * 10; // Adjust sensitivity as needed
+                            glSurfaceView.queueEvent(() -> openGLRenderer.handleZoomIn(zoomFactor));
+                        }
+                        dstX = normalizedX;
+                        dstY = normalizedY;
+
                     }
                 }
                 return true;
@@ -83,10 +96,8 @@ public class OpenGLActivity extends AppCompatActivity {
         setContentView(glSurfaceView);
     }
 
-    private float calculateDistance(MotionEvent event) {
-        float dx = event.getX(0);
-        float dy = event.getY(0);
-        return (float) Math.sqrt(dx * dx + dy * dy);
+    private float calculateDistance(float x1, float y1, float x2, float y2) {
+        return (float) Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
     }
 
 
