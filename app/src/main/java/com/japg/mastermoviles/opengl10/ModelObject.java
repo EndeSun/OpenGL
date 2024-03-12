@@ -160,12 +160,10 @@ public class ModelObject {
     //------------------------------------------
     //------------------------------------------
 
-
-
-
     public void setdst(float dstrX, float dstrY){
         this.dstrX = dstrX;
         this.dstrY = dstrY;
+
     }
 
     public void updatePosition(float speed){
@@ -174,6 +172,10 @@ public class ModelObject {
 
         this.rX += diffX * speed;
         this.rY += diffY * speed;
+    }
+
+    public void rotateY(float rY){
+        this.dstrY += rY;
     }
 
     public void zoom(float rZ){

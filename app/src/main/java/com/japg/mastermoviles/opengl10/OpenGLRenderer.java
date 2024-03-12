@@ -1,6 +1,9 @@
 package com.japg.mastermoviles.opengl10;
 import android.content.Context;
 import android.opengl.GLSurfaceView.Renderer;
+import android.util.Log;
+import android.widget.Toast;
+
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 import static android.opengl.GLES20.GL_COLOR_BUFFER_BIT;
@@ -15,11 +18,13 @@ import static android.opengl.GLES20.glLineWidth;
 import static android.opengl.GLES20.glViewport;
 
 public class OpenGLRenderer implements Renderer {
+	private Context context;
 	private final float[] projectionMatrix = new float[16];
 	private final ModelObject headModel;
 	private final ModelObject bodyModel;
 	//------------------------------------------
 	public OpenGLRenderer(Context context) {
+		this.context = context;
 		headModel = new ModelObject(context, R.raw.cabeza_mario_6, R.drawable.cara_2, 0, 0, -5);
 		bodyModel = new ModelObject(context, R.raw.cuerpo_mario_6, R.drawable.cuerpo_2, 0, 0, -5);
 	}
@@ -42,7 +47,9 @@ public class OpenGLRenderer implements Renderer {
 
 		headModel.drawObject(projectionMatrix);
 		bodyModel.drawObject(projectionMatrix);
-		updateRotation();
+
+		headModel.updatePosition(0.06f);
+		bodyModel.updatePosition(0.06f);
 	}
 
 
@@ -73,11 +80,13 @@ public class OpenGLRenderer implements Renderer {
 		bodyModel.zoom(normalizedZ);
 	}
 
-	public void updateRotation() {
-		//rXHead += diffXHead * (rotationSpeed + 0.1);
-		//rYHead += 1;
-		headModel.updatePosition(0.06f);
-		bodyModel.updatePosition(0.06f);
+
+	public void rotateHeadLeft(){
+		headModel.rotateY(-20);
+	}
+
+	public void rotateHeadRight(){
+		headModel.rotateY(20);
 	}
 
 

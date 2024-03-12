@@ -1,41 +1,56 @@
 package com.japg.mastermoviles.opengl10;
 
+import static android.widget.Toast.*;
+
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.pm.ConfigurationInfo;
 import android.opengl.GLSurfaceView;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
-import android.widget.Toast;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ImageButton;
+
 import androidx.appcompat.app.AppCompatActivity;
 public class OpenGLActivity extends AppCompatActivity {
     private GLSurfaceView glSurfaceView;
     private boolean rendererSet = false;
     private float dstX = 1f;
     private float dstY = 1f;
+    private ImageButton leftButton;
+    private ImageButton rightButton;
+    private OpenGLRenderer openGLRenderer;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        initUI();
+        leftButton.setOnClickListener(v -> glSurfaceView.queueEvent(() -> openGLRenderer.rotateHeadLeft()));
+        rightButton.setOnClickListener(v -> glSurfaceView.queueEvent(() -> openGLRenderer.rotateHeadRight()));
+    }
 
-        // View
+
+
+    private void initUI(){
+        //Surface View
         glSurfaceView = new GLSurfaceView(this);
-        // OpenGLRenderer
-        final OpenGLRenderer openGLRenderer = new OpenGLRenderer(this);
+        openGLRenderer = new OpenGLRenderer(this);
         final ActivityManager activityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-
         final ConfigurationInfo configurationInfo = activityManager.getDeviceConfigurationInfo();
+
         // Version check
         final boolean supportsEs2 = configurationInfo.reqGlEsVersion >= 0x20000
-                        || Build.FINGERPRINT.startsWith("generic")
-                        || Build.FINGERPRINT.startsWith("unknown")
-                        || Build.MODEL.contains("google_sdk")
-                        || Build.MODEL.contains("Emulator")
-                        || Build.MODEL.contains("Android SDK built for x86");
+                || Build.FINGERPRINT.startsWith("generic")
+                || Build.FINGERPRINT.startsWith("unknown")
+                || Build.MODEL.contains("google_sdk")
+                || Build.MODEL.contains("Emulator")
+                || Build.MODEL.contains("Android SDK built for x86");
 
         if (supportsEs2) {
             // Request OpenGL 2.0 compatible context.
@@ -47,9 +62,9 @@ public class OpenGLActivity extends AppCompatActivity {
             glSurfaceView.setRenderer(openGLRenderer);
             // -----------------------
             rendererSet = true;
-            Toast.makeText(this, "OpenGL ES 2.0 supported", Toast.LENGTH_LONG).show();
+            makeText(this, "OpenGL ES 2.0 supported", LENGTH_LONG).show();
         } else {
-            Toast.makeText(this, "OpenGL ES 2.0 not supported", Toast.LENGTH_LONG).show();
+            makeText(this, "OpenGL ES 2.0 not supported", LENGTH_LONG).show();
             return;
         }
 
@@ -89,25 +104,34 @@ public class OpenGLActivity extends AppCompatActivity {
                     }
                 }
                 return true;
+
             } else {
                 return false;
             }
         });
+
         setContentView(glSurfaceView);
+
+        View buttonsLayout = LayoutInflater.from(this).inflate(R.layout.openglmainlayout, null);
+
+        addContentView(buttonsLayout, new ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+        leftButton = findViewById(R.id.left_button);
+        rightButton = findViewById(R.id.right_button);
     }
 
+
+
+
+
+
+
+
+    //Distance for the zoom in and the zoom out
     private float calculateDistance(float x1, float y1, float x2, float y2) {
         return (float) Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
     }
-
-
-
-
-
-
-
-
-
 
     //Activities lifecycle
     @Override
