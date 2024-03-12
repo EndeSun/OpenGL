@@ -25,7 +25,7 @@ public class OpenGLRenderer implements Renderer {
 	//------------------------------------------
 	public OpenGLRenderer(Context context) {
 		this.context = context;
-		headModel = new ModelObject(context, R.raw.cabeza_mario_6, R.drawable.cara_2, 0, 0, -5);
+		headModel = new ModelObject(context, R.raw.cabeza_mario_3, R.drawable.cara_2, 0, 0, -5);
 		bodyModel = new ModelObject(context, R.raw.cuerpo_mario_6, R.drawable.cuerpo_2, 0, 0, -5);
 	}
 	//------------------------------------------

@@ -8,12 +8,14 @@ import android.content.pm.ConfigurationInfo;
 import android.opengl.GLSurfaceView;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -25,11 +27,13 @@ public class OpenGLActivity extends AppCompatActivity {
     private ImageButton leftButton;
     private ImageButton rightButton;
     private OpenGLRenderer openGLRenderer;
+    private View buttonsLayout;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        buttonsLayout = LayoutInflater.from(this).inflate(R.layout.openglmainlayout, null);
         initUI();
         leftButton.setOnClickListener(v -> glSurfaceView.queueEvent(() -> openGLRenderer.rotateHeadLeft()));
         rightButton.setOnClickListener(v -> glSurfaceView.queueEvent(() -> openGLRenderer.rotateHeadRight()));
@@ -112,13 +116,16 @@ public class OpenGLActivity extends AppCompatActivity {
 
         setContentView(glSurfaceView);
 
-        View buttonsLayout = LayoutInflater.from(this).inflate(R.layout.openglmainlayout, null);
 
-        addContentView(buttonsLayout, new ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        // Add the buttons layout to the GLSurfaceView's parent view at the bottom
+        FrameLayout parent = (FrameLayout) glSurfaceView.getParent();
+        parent.addView(buttonsLayout, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM));
 
         leftButton = findViewById(R.id.left_button);
         rightButton = findViewById(R.id.right_button);
+
+
     }
 
 
