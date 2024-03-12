@@ -54,12 +54,14 @@ public class OpenGLActivity extends AppCompatActivity {
                 // Android's Y coordinates are inverted --> normalization
                 final float normalizedX = (event.getX() / (float) v.getWidth()) * 2 - 1;
                 final float normalizedY = -((event.getY() / (float) v.getHeight()) * 2 - 1);
+
                 if (event.getAction() == MotionEvent.ACTION_DOWN) {
                     glSurfaceView.queueEvent(() -> openGLRenderer.handleTouchPress(normalizedX, normalizedY));
                     oldDistance = calculateDistance(event);
 
                 } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
                     glSurfaceView.queueEvent(() -> openGLRenderer.handleTouchDrag(normalizedX, normalizedY));
+
                     if (event.getPointerCount() == 2) {
                         float newDistance = calculateDistance(event);
                         float scaleFactor = (newDistance - oldDistance) * 0.01f; // Ajusta este valor según sea necesario
